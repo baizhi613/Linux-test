@@ -5,22 +5,22 @@
 
 using namespace std;
 
-typedef void(*work_t)();//函数指针类型
-typedef void(*task_t)();
+typedef void(*work_t)(int);//函数指针类型
+typedef void(*task_t)(int,pid_t);
 
-void PrintLog()
+void PrintLog(int fd,pid_t pid)
 {
-    cout<<"printf log task"<<endl;
+    cout<<"sub process:"<<pid<<",fd:"<<fd<<",task is:printf log task\n"<<endl;
 }
 
-void ReloadConf()
+void ReloadConf(int fd,pid_t pid)
 {
-    cout<<"reload conf task"<<endl;
+    cout<<"sub process:"<<pid<<",fd:"<<fd<<",task is:reload conf task\n"<<endl;
 }
 
-void ConnectMysql()
+void ConnectMysql(int fd,pid_t pid)
 {
-    cout<<"connect mysql task"<<endl;
+    cout<<"sub process:"<<pid<<",fd:"<<fd<<",task is:connect mysql task\n"<<endl;
 }
 
 task_t tasks[3]={PrintLog,ReloadConf,ConnectMysql};
@@ -30,7 +30,7 @@ uint32_t NextTask()
     return rand()%3;
 }
 
-void worker()
+void worker(int fd)
 {
     while(true)
     {
@@ -39,9 +39,12 @@ void worker()
         if(n==sizeof(command_code))
         {
             if(command_code>=3) continue;
-            tasks[command_code]();
+            tasks[command_code](fd,getpid());
         }
-        cout<<"I am a worker:"<<getpid()<<endl;
-        sleep(1);
+        else if(n==0)
+        {
+            std::cout<<"sub process:"<<getpid()<<"quit now..."<<std::endl;
+            break;
+        }
     }
 }

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <ctime>
 #include "task.hpp"
+#include "../../../../usr/include/x86_64-linux-gnu/sys/wait.h"
 
 using namespace std;
 
@@ -36,6 +37,7 @@ public:
     int wfd(){return _wfd;}
     pid_t pid(){return _sub_process_id;}
     string name(){return _name;}
+    void Close(){close(_wfd);}
     ~Channel()
     {
     }
@@ -53,6 +55,7 @@ public:
     }
     int CreateProcess(work_t work)
     {
+        std::vector<int> fds;
         for(int number=0;number<_sub_process_num;number++)
         {
             int pipefd[2]{0};
@@ -62,14 +65,25 @@ public:
             pid_t id=fork();
             if(id==0)
             {
+                if(!fds.empty())
+                {
+                    for(auto fd:fds)
+                    {
+                        close(fd);
+                        std::cout<<"close w fd:"<<fd<<" ";
+                    }
+                    std::cout<<std::endl;
+                }
                 close(pipefd[1]);
                 dup2(pipefd[0],0);
-                work();
+                work(pipefd[0]);
                 exit(0);
             }
+            sleep(2);
             string cname = "channel-" + to_string(number);
             close(pipefd[0]);
             channels.push_back(Channel(pipefd[1], id, cname));
+            fds.push_back(pipefd[1]);
         }
         return 0;
     }
@@ -86,6 +100,32 @@ public:
         cout << "send code: " << code << " to " << channels[index].name() << " sub prorcess id: " <<  channels[index].pid() << endl;
         write(channels[index].wfd(), &code, sizeof(code));
     }
+    void killAll()
+    {
+        for(auto &channel:channels)
+        {
+            channel.Close();
+            pid_t pid=channel.pid();
+            pid_t rid=waitpid(pid,nullptr,0);
+            if(rid==pid)
+            {
+                std::cout<<"wait sub process:"<<pid<<"success..."<<std::endl;
+            }
+            std::cout<<channel.name()<<"close done"<<"sub process quit now:"<<channel.pid()<<std::endl;
+        }
+    }
+    void Wait()
+    {
+        // for(auto &channel:channels)
+        // {
+        //     pid_t pid=channel.pid();
+        //     pid_t rid=waitpid(pid,nullptr,0);
+        //     if(rid==pid)
+        //     {
+        //         std::cout<<"wait sub process:"<<pid<<"success..."<<std::endl;
+        //     }
+        // }
+    }
     void Debug()
     {
         for(auto &channel:channels)
@@ -100,6 +140,24 @@ private:
     int _sub_process_num;
     vector<Channel> channels;
 };
+void CtrlProcessPool(ProcessPool *processpool_ptr,int cnt)
+{
+    while(cnt)
+    {
+        // a. 选择一个进程和通道
+        int channel = processpool_ptr->NextChannel();
+        // cout << channel.name() << endl;
+
+        // b. 你要选择一个任务
+        uint32_t code = NextTask();
+
+        // c. 发送任务
+        processpool_ptr->SendTaskCode(channel, code);
+
+        sleep(1);
+        cnt--;
+    }
+}
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -119,25 +177,15 @@ int main(int argc, char *argv[])
     // processpool_ptr->Debug();
 
     // 2. 控制子进程
-    while(true)
-    {
-        // a. 选择一个进程和通道
-        int channel = processpool_ptr->NextChannel();
-        // cout << channel.name() << endl;
+    CtrlProcessPool(processpool_ptr,10);
 
-        // b. 你要选择一个任务
-        uint32_t code = NextTask();
-
-        // c. 发送任务
-        processpool_ptr->SendTaskCode(channel, code);
-
-        sleep(1);
-    }
-
-    sleep(100);
+    std::cout<<"task run done"<<std::endl;
+    //sleep(100);
 
     // 3. 回收子进程
-    // wait sub process;
+    processpool_ptr->killAll();
+
+    processpool_ptr->Wait();
 
     delete processpool_ptr;
     return 0;
