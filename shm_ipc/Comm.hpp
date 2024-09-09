@@ -91,3 +91,12 @@ void *ShmAttach(int shmid)
     }
     return addr;
 }
+
+void ShmDetach(void *addr)
+{
+    int n=shmdt(addr);
+    if(n<0)
+    {
+        std::cerr<<"shmdt error"<<std::endl;
+    }
+}
