@@ -51,7 +51,10 @@
         "cstring": "cpp",
         "ratio": "cpp",
         "semaphore": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "queue": "cpp"
     },
     "aide.convertLanguagePairs": {
         "cpp": "java"
