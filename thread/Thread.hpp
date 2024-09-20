@@ -10,7 +10,7 @@
 namespace ThreadModule
 {
     template<typename T>
-    using func_t = std::function<void(T&)>;
+    using func_t = std::function<void(T)>;
     // typedef std::function<void(const T&)> func_t;
 
     template<typename T>
@@ -22,7 +22,7 @@ namespace ThreadModule
             _func(_data);
         }
     public:
-        Thread(func_t<T> func, T &data, const std::string &name="none-name")
+        Thread(func_t<T> func, T data, const std::string &name="none-name")
             : _func(func), _data(data), _threadname(name), _stop(true)
         {}
         static void *threadroutine(void *args) // 类成员函数，形参是有this指针的！！
@@ -71,7 +71,7 @@ namespace ThreadModule
     private:
         pthread_t _tid;
         std::string _threadname;
-        T &_data;  // 为了让所有的线程访问同一个全局变量
+        T _data;  // 为了让所有的线程访问同一个全局变量
         func_t<T> _func;
         bool _stop;
     };
