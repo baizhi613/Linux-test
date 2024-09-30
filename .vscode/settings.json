@@ -54,7 +54,9 @@
         "stop_token": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "cerrno": "cpp",
+        "fstream": "cpp"
     },
     "aide.convertLanguagePairs": {
         "cpp": "java"
