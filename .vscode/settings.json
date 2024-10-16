@@ -56,7 +56,9 @@
         "mutex": "cpp",
         "queue": "cpp",
         "cerrno": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "sstream": "cpp"
     },
     "aide.convertLanguagePairs": {
         "cpp": "java"
